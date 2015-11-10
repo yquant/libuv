@@ -27,6 +27,7 @@ config("disable_warnings_config") {
       "/wd4054",
       "/wd4113",
       "/wd4131",
+      "/wd4189",
       "/wd4201",
       "/wd4204",
       "/wd4210",
@@ -232,6 +233,8 @@ source_set("libuv") {
 }
 
 static_library("libuv_static") {
+  complete_static_lib = true
+  
   public_deps = [
     ":libuv"
   ]
