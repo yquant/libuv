@@ -1,0 +1,41 @@
+# Copyright (c) 2013 The Chromium Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+config("disable_warnings_config") {
+  if (is_win) {
+    cflags = [
+      "/wd4113",
+      "/wd4131",
+      "/wd4701",
+   ]
+  }
+}
+
+executable("s5-proxy") {
+  sources = [
+    "client.c",
+    "defs.h",
+    "main.c",
+    "s5.c",
+    "s5.h",
+    "server.c",
+    "util.c",
+  ]
+
+  if (is_win) {
+    sources += [ "getopt.c" ]
+  }
+  
+  defines = [
+    "HAVE_UNISTD_H=0",
+    "HAVE_NETINET_IN_H=0",
+    "HAVE_SYS_SOCKET_H=0"
+  ]
+
+  configs += [ ":disable_warnings_config" ]
+
+  deps = [
+    "//third_party/libuv:libuv_static"
+  ]
+}
