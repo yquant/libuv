@@ -252,6 +252,8 @@ config("libuv_shared_public_config") {
 shared_library("libuv_shared") {
   sources = libuv_sources
   
+  output_name = "libuv"
+
   defines = [ "BUILDING_UV_SHARED=1" ]
 
   if (!is_win) {
