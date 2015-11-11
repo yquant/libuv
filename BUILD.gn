@@ -4,6 +4,128 @@
 
 import("//build/config/win/visual_studio_version.gni")
 
+libuv_sources = [
+  "include/uv.h",
+  "include/tree.h",
+  "include/uv-errno.h",
+  "include/uv-threadpool.h",
+  "include/uv-version.h",
+  "src/fs-poll.c",
+  "src/heap-inl.h",
+  "src/inet.c",
+  "src/queue.h",
+  "src/threadpool.c",
+  "src/uv-common.c",
+  "src/uv-common.h",
+  "src/version.c",
+]
+
+if (is_win) {
+  libuv_sources += [
+    "include/uv-win.h",
+    "src/win/async.c",
+    "src/win/atomicops-inl.h",
+    "src/win/core.c",
+    "src/win/dl.c",
+    "src/win/error.c",
+    "src/win/fs.c",
+    "src/win/fs-event.c",
+    "src/win/getaddrinfo.c",
+    "src/win/getnameinfo.c",
+    "src/win/handle.c",
+    "src/win/handle-inl.h",
+    "src/win/internal.h",
+    "src/win/loop-watcher.c",
+    "src/win/pipe.c",
+    "src/win/thread.c",
+    "src/win/poll.c",
+    "src/win/process.c",
+    "src/win/process-stdio.c",
+    "src/win/req.c",
+    "src/win/req-inl.h",
+    "src/win/signal.c",
+    "src/win/stream.c",
+    "src/win/stream-inl.h",
+    "src/win/tcp.c",
+    "src/win/tty.c",
+    "src/win/timer.c",
+    "src/win/udp.c",
+    "src/win/util.c",
+    "src/win/winapi.c",
+    "src/win/winapi.h",
+    "src/win/winsock.c",
+    "src/win/winsock.h",
+  ]
+  
+  if (visual_studio_version < 2015) {
+    libuv_sources += [
+      "src/win/snprintf.c"
+    ]
+  }
+} else {
+  libuv_sources += [
+    "include/uv-unix.h",
+    "include/uv-linux.h",
+    "include/uv-sunos.h",
+    "include/uv-darwin.h",
+    "include/uv-bsd.h",
+    "include/uv-aix.h",
+    "src/unix/async.c",
+    "src/unix/atomic-ops.h",
+    "src/unix/core.c",
+    "src/unix/dl.c",
+    "src/unix/fs.c",
+    "src/unix/getaddrinfo.c",
+    "src/unix/getnameinfo.c",
+    "src/unix/internal.h",
+    "src/unix/loop.c",
+    "src/unix/loop-watcher.c",
+    "src/unix/pipe.c",
+    "src/unix/poll.c",
+    "src/unix/process.c",
+    "src/unix/signal.c",
+    "src/unix/spinlock.h",
+    "src/unix/stream.c",
+    "src/unix/tcp.c",
+    "src/unix/thread.c",
+    "src/unix/timer.c",
+    "src/unix/tty.c",
+    "src/unix/udp.c",
+  ]
+  
+  if (is_linux || is_mac || is_ios || is_android) {
+    libuv_sources += [ "src/unix/proctitle.c" ]
+  }
+  if (is_mac || is_ios) {
+    libuv_sources += [
+      "src/unix/darwin.c",
+      "src/unix/fsevents.c",
+      "src/unix/darwin-proctitle.c",
+    ]
+  }
+  if (is_linux) {
+    libuv_sources += [
+      "src/unix/linux-core.c",
+      "src/unix/linux-inotify.c",
+      "src/unix/linux-syscalls.c",
+      "src/unix/linux-syscalls.h",
+    ]
+  }
+  if (is_android) {
+    libuv_sources += [
+      "src/unix/linux-core.c",
+      "src/unix/linux-inotify.c",
+      "src/unix/linux-syscalls.c",
+      "src/unix/linux-syscalls.h",
+      "src/unix/pthread-fixes.c",
+      "src/unix/android-ifaddrs.c"
+    ]
+  }
+  if (is_ios || is_mac) {
+    libuv_sources += [ "src/unix/kqueue.c" ]
+  }
+}
+  
 config("libuv_public_config") {
   include_dirs = [ "include" ]
 
@@ -17,6 +139,33 @@ config("libuv_public_config") {
     }
     if (is_linux) {
       defines += [ "_POSIX_C_SOURCE=200112" ]
+    }
+  }
+}
+
+config("libuv_public_link_config") {
+  if (is_win) {
+    libs = [
+      "advapi32.lib",
+      "iphlpapi.lib",
+      "psapi.lib",
+      "shell32.lib",
+      "userenv.lib",
+      "ws2_32.lib",
+    ]
+  } else {
+    libs = [ "m" ]
+    
+    if (!is_android) {
+      ldflags = [ "-pthread" ]
+    }
+    
+    if (is_linux) {
+      libs += [ "dl", "rt" ]
+    }
+    
+    if (is_android) {
+      libs += [ "dl" ]
     }
   }
 }
@@ -53,14 +202,6 @@ config("libuv_config") {
       "_WIN32_WINNT=0x0600",
       "_GNU_SOURCE",
     ]
-    libs = [
-      "advapi32.lib",
-      "iphlpapi.lib",
-      "psapi.lib",
-      "shell32.lib",
-      "userenv.lib",
-      "ws2_32.lib",
-    ]
   } else {
     cflags = [
       "-g",
@@ -70,12 +211,6 @@ config("libuv_config") {
       "-Wextra",
       "-Wno-unused-parameter",
     ]
-    
-    libs = [ "m" ]
-    
-    if (!is_android) {
-      ldflags = [ "-pthread" ]
-    }
     
     if (is_mac || is_ios) {
       defines = [
@@ -92,151 +227,21 @@ config("libuv_config") {
     
     if (is_linux) {
       defines = [ "_GNU_SOURCE" ]
-      libs += [ "dl", "rt" ]
-    }
-    
-    if (is_android) {
-      libs += [ "dl" ]
     }
   }
 }
 
-source_set("libuv") {
-  sources = [
-    "include/uv.h",
-    "include/tree.h",
-    "include/uv-errno.h",
-    "include/uv-threadpool.h",
-    "include/uv-version.h",
-    "src/fs-poll.c",
-    "src/heap-inl.h",
-    "src/inet.c",
-    "src/queue.h",
-    "src/threadpool.c",
-    "src/uv-common.c",
-    "src/uv-common.h",
-    "src/version.c",
-  ]
-
-  if (is_win) {
-    sources += [
-      "include/uv-win.h",
-      "src/win/async.c",
-      "src/win/atomicops-inl.h",
-      "src/win/core.c",
-      "src/win/dl.c",
-      "src/win/error.c",
-      "src/win/fs.c",
-      "src/win/fs-event.c",
-      "src/win/getaddrinfo.c",
-      "src/win/getnameinfo.c",
-      "src/win/handle.c",
-      "src/win/handle-inl.h",
-      "src/win/internal.h",
-      "src/win/loop-watcher.c",
-      "src/win/pipe.c",
-      "src/win/thread.c",
-      "src/win/poll.c",
-      "src/win/process.c",
-      "src/win/process-stdio.c",
-      "src/win/req.c",
-      "src/win/req-inl.h",
-      "src/win/signal.c",
-      "src/win/stream.c",
-      "src/win/stream-inl.h",
-      "src/win/tcp.c",
-      "src/win/tty.c",
-      "src/win/timer.c",
-      "src/win/udp.c",
-      "src/win/util.c",
-      "src/win/winapi.c",
-      "src/win/winapi.h",
-      "src/win/winsock.c",
-      "src/win/winsock.h",
-    ]
-    
-    if (visual_studio_version < 2015) {
-      sources += [
-        "src/win/snprintf.c"
-      ]
-    }
-  } else {
-    sources += [
-      "include/uv-unix.h",
-      "include/uv-linux.h",
-      "include/uv-sunos.h",
-      "include/uv-darwin.h",
-      "include/uv-bsd.h",
-      "include/uv-aix.h",
-      "src/unix/async.c",
-      "src/unix/atomic-ops.h",
-      "src/unix/core.c",
-      "src/unix/dl.c",
-      "src/unix/fs.c",
-      "src/unix/getaddrinfo.c",
-      "src/unix/getnameinfo.c",
-      "src/unix/internal.h",
-      "src/unix/loop.c",
-      "src/unix/loop-watcher.c",
-      "src/unix/pipe.c",
-      "src/unix/poll.c",
-      "src/unix/process.c",
-      "src/unix/signal.c",
-      "src/unix/spinlock.h",
-      "src/unix/stream.c",
-      "src/unix/tcp.c",
-      "src/unix/thread.c",
-      "src/unix/timer.c",
-      "src/unix/tty.c",
-      "src/unix/udp.c",
-    ]
-    
-    if (is_linux || is_mac || is_ios || is_android) {
-      sources += [ "src/unix/proctitle.c" ]
-    }
-    if (is_mac || is_ios) {
-      sources += [
-        "src/unix/darwin.c",
-        "src/unix/fsevents.c",
-        "src/unix/darwin-proctitle.c",
-      ]
-    }
-    if (is_linux) {
-      sources += [
-        "src/unix/linux-core.c",
-        "src/unix/linux-inotify.c",
-        "src/unix/linux-syscalls.c",
-        "src/unix/linux-syscalls.h",
-      ]
-    }
-    if (is_android) {
-      sources += [
-        "src/unix/linux-core.c",
-        "src/unix/linux-inotify.c",
-        "src/unix/linux-syscalls.c",
-        "src/unix/linux-syscalls.h",
-        "src/unix/pthread-fixes.c",
-        "src/unix/android-ifaddrs.c"
-      ]
-    }
-    if (is_ios || is_mac) {
-      sources += [ "src/unix/kqueue.c" ]
-    }
-  }
+static_library("libuv_static") {
+  sources = libuv_sources
   
   configs += [
     ":libuv_config",
     ":disable_warnings_config",
   ]
 
-  public_configs = [ ":libuv_public_config" ]
-}
-
-static_library("libuv_static") {
-  complete_static_lib = true
-  
-  public_deps = [
-    ":libuv"
+  public_configs = [
+    ":libuv_public_config",
+    ":libuv_public_link_config",
   ]
 }
 
@@ -245,23 +250,34 @@ config("libuv_shared_public_config") {
 }
 
 shared_library("libuv_shared") {
+  sources = libuv_sources
+  
   defines = [ "BUILDING_UV_SHARED=1" ]
 
-  cflags = [ "-fPIC" ]
+  if (!is_win) {
+    cflags = [ "-fPIC" ]
 
-  if (!is_win && !is_mac) {
-    # This will cause gyp to set soname
-    # Must correspond with UV_VERSION_MAJOR
-    # in include/uv-version.h
-    output_extension = "so.1"
+    if (!is_mac) {
+      # This will cause gyp to set soname
+      # Must correspond with UV_VERSION_MAJOR
+      # in include/uv-version.h
+      output_extension = "so.1"
+    }
+
+    if (!is_android) {
+      ldflags = [ "-pthread" ]
+    }
   }
+  
+  configs += [
+    ":libuv_config",
+    ":disable_warnings_config",
+    ":libuv_public_link_config",
+  ]
 
   public_configs = [
+    ":libuv_public_config",
     ":libuv_shared_public_config",
-  ]
-  
-  public_deps = [
-    ":libuv"
   ]
 }
 
@@ -436,7 +452,7 @@ executable("libuv-run-tests") {
   configs += [ ":default_config" ]
 
   deps = [
-    ":libuv"
+    ":libuv_static"
   ]
 }
 
@@ -489,7 +505,7 @@ executable("libuv-run-benchmarks") {
   configs += [ ":default_config" ]
 
   deps = [
-    ":libuv"
+    ":libuv_static"
   ]
 }
 
