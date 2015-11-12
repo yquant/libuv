@@ -234,7 +234,7 @@ static int uv__pipe_getsockpeername(const uv_pipe_t* handle,
     addrlen = strlen(sa.sun_path);
 
 
-  if (addrlen > *size) {
+  if ((unsigned int)addrlen > *size) {
     *size = addrlen;
     return UV_ENOBUFS;
   }

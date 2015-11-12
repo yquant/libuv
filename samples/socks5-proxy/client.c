@@ -148,7 +148,7 @@ void client_finish_init(server_ctx *sx, client_ctx *cx) {
  * data between the client and upstream.
  */
 static void do_next(client_ctx *cx) {
-  int new_state;
+  int new_state = 0;
 
   ASSERT(cx->state != s_dead);
   switch (cx->state) {

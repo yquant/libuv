@@ -25,17 +25,23 @@ executable("s5-proxy") {
 
   if (is_win) {
     sources += [ "getopt.c" ]
-  }
   
-  defines = [
-    "HAVE_UNISTD_H=0",
-    "HAVE_NETINET_IN_H=0",
-    "HAVE_SYS_SOCKET_H=0"
-  ]
+    defines = [
+      "HAVE_UNISTD_H=0",
+      "HAVE_NETINET_IN_H=0",
+      "HAVE_SYS_SOCKET_H=0"
+    ]
+  } else {
+    defines = [
+      "HAVE_UNISTD_H=1",
+      "HAVE_NETINET_IN_H=1",
+      "HAVE_SYS_SOCKET_H=1"
+    ]
+  }
 
   configs += [ ":disable_warnings_config" ]
 
   deps = [
-    "//third_party/libuv:libuv_static"
+    "//third_party/libuv:libuv_shared"
   ]
 }
