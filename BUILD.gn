@@ -283,7 +283,7 @@ shared_library("libuv_shared") {
   ]
 }
 
-config("default_config") {
+config("tests_default_config") {
   if (!is_win) {
     defines = [
       "_LARGEFILE_SOURCE",
@@ -298,6 +298,22 @@ config("default_config") {
       cflags += [ "-Wall", "-Wextra", "-Wno-unused-parameter" ]
       cflags += [ "-g", "--std=gnu89", "-pedantic" ]
     }
+  }
+}
+
+config("disable_tests_warnings_config") {
+  if (is_win) {
+    cflags = [
+      "/wd4133",
+      "/wd4189",
+      "/wd4206",
+      "/wd4245",
+      "/wd4267",
+      "/wd4310",
+      "/wd4389",
+      "/wd4459",
+      "/wd4706",
+    ]
   }
 }
 
@@ -451,7 +467,10 @@ executable("libuv-run-tests") {
     defines = [ "_GNU_SOURCE" ]
   }
   
-  configs += [ ":default_config" ]
+  configs += [
+    ":tests_default_config",
+    ":disable_tests_warnings_config",
+  ]
 
   deps = [
     ":libuv_static"
@@ -504,7 +523,10 @@ executable("libuv-run-benchmarks") {
     defines = [ "_GNU_SOURCE" ]
   }
   
-  configs += [ ":default_config" ]
+  configs += [
+    ":tests_default_config",
+    ":disable_tests_warnings_config",
+  ]
 
   deps = [
     ":libuv_static"
