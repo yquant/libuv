@@ -183,6 +183,7 @@ config("disable_warnings_config") {
       "/wd4245",
       "/wd4267",
       "/wd4389",
+      "/wd4456",
       "/wd4459",
       "/wd4477",
       "/wd4701",
